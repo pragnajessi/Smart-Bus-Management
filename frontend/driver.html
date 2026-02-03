@@ -61,7 +61,24 @@
   <div class="container">
     <h2>🚌 Driver Announcement Panel</h2>
 
-    <input id="stopInput" placeholder="Enter Next Stop Name">
+    <input list="stopsData" id="stopInput" placeholder="Enter Next Stop Name">
+
+    <datalist id="stopsData">
+      <option value="Miyapur">
+      <option value="Koti">
+      <option value="LB Nagar">
+      <option value="Hayathnagar">
+      <option value="Nalgonda">
+      <option value="Suryapet">
+      <option value="Nandigama">
+      <option value="Ibrahimpatnam">
+      <option value="Bhavanipuram">
+      <option value="PNBS">
+      <option value="Benz Circle">
+      <option value="Ramavarappadu Ring">
+      <option value="Vijayawada">
+    </datalist>
+
     <button onclick="addStop()">Announce Stop</button>
 
     <h3>📍 Upcoming Stops</h3>
