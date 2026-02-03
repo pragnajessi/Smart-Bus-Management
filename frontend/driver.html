@@ -69,43 +69,75 @@
   </div>
 
   <script>
-    const API = "http://127.0.0.1:8000/announcements";
+    let stops = [];
 
-    // Add stop to backend
     function addStop() {
-      const stop = document.getElementById("stopInput").value;
-      if (!stop) return alert("Enter stop name");
+      const input = document.getElementById("stopInput");
+      const stop = input.value.trim();
 
-      fetch(API + "/add", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ stop: stop })
-      })
-        .then(() => {
-          document.getElementById("stopInput").value = "";
-          loadStops();   // refresh list immediately
-        });
+      if (stop === "") {
+        alert("Enter a stop name");
+        return;
+      }
+
+      stops.push(stop);
+      input.value = "";
+
+      renderStops();
+
+      // speak announcement
+      speak(`Hello passengers, next stop is ${stop}`);
     }
 
-    // Load all stops
-    function loadStops() {
-      fetch(API)
-        .then(res => res.json())
-        .then(data => {
-          const list = document.getElementById("stopsList");
-          list.innerHTML = "";
+    function renderStops() {
+      const list = document.getElementById("stopsList");
+      list.innerHTML = "";
 
-          data.forEach(stop => {
-            const li = document.createElement("li");
-            li.textContent = stop;
-            list.appendChild(li);
-          });
-        });
+      stops.forEach((stop, index) => {
+        const li = document.createElement("li");
+        li.textContent = `${index + 1}. ${stop}`;
+        list.appendChild(li);
+      });
     }
 
-    // Auto load when page opens
-    loadStops();
+    function speak(text) {
+      const msg = new SpeechSynthesisUtterance(text);
+      msg.rate = 1;
+      msg.pitch = 1;
+      speechSynthesis.speak(msg);
+    }
   </script>
+  <script>
+    let stops = [];
+
+    function addStop() {
+      const stop = document.getElementById("stopInput").value.trim();
+
+      if (!stop) {
+        alert("Enter stop name");
+        return;
+      }
+
+      stops.push(stop);
+
+      document.getElementById("stopInput").value = "";
+
+      const list = document.getElementById("stopsList");
+      list.innerHTML = "";
+
+      stops.forEach(s => {
+        const li = document.createElement("li");
+        li.textContent = s;
+        list.appendChild(li);
+      });
+
+      const msg = new SpeechSynthesisUtterance(
+        `Hello passengers, next stop is ${stop}`
+      );
+      speechSynthesis.speak(msg);
+    }
+  </script>
+
 
 </body>
 
