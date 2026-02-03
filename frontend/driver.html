@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Driver Panel</title>
+<style>
+body{font-family:Arial;background:#eef2f7;padding:20px}
+.card{background:white;padding:20px;border-radius:15px;max-width:420px;margin:auto}
+select,button{width:100%;padding:12px;margin:10px 0;border-radius:8px}
+button{background:#28a745;color:white;font-size:16px}
+</style>
+</head>
+<body>
+
+<div class="card">
+<h2>🚍 Driver Panel</h2>
+
+<select id="stop">
+<option>Vijayawada Bus Stand</option>
+<option>Guntur</option>
+<option>Rajahmundry</option>
+<option>Kakinada</option>
+<option>Tirupati</option>
+</select>
+
+<button onclick="announce()">📢 Announce Stop</button>
+
+<p id="msg"></p>
+</div>
+
+<script>
+let count=0;
+
+function speakTwice(text){
+ count=0;
+ let speak = ()=>{
+   if(count<2){
+     let u=new SpeechSynthesisUtterance(text);
+     speechSynthesis.speak(u);
+     count++;
+     setTimeout(speak,2000);
+   }
+ }
+ speak();
+}
+
+async function announce(){
+ let stop=document.getElementById("stop").value;
+
+ await fetch("http://127.0.0.1:8000/update-stop",{
+   method:"POST",
+   headers:{"Content-Type":"application/json"},
+   body:JSON.stringify({stop})
+ });
+
+ speakTwice("Next stop is "+stop);
+ document.getElementById("msg").innerText="Announced: "+stop;
+}
+</script>
+
+</body>
+</html>

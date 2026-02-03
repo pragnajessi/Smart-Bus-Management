@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<body>
+<h2>🎒 Lost & Found</h2>
+
+<input id="item" placeholder="Item name">
+<input id="location" placeholder="Found location">
+<input id="contact" placeholder="Contact number">
+
+<button onclick="add()">Add Item</button>
+
+<ul id="list"></ul>
+
+<script>
+const API="http://127.0.0.1:8000";
+
+function load(){
+ fetch(API+"/lostfound").then(r=>r.json()).then(data=>{
+   list.innerHTML="";
+   data.forEach(i=>{
+     list.innerHTML+=`<li>${i.item} - ${i.location} - ${i.contact}</li>`;
+   });
+ });
+}
+
+function add(){
+ fetch(API+"/lostfound",{
+  method:"POST",
+  headers:{"Content-Type":"application/json"},
+  body:JSON.stringify({
+    item:item.value,
+    location:location.value,
+    contact:contact.value
+  })
+ }).then(load);
+}
+
+load();
+</script>
+</body>
+</html>

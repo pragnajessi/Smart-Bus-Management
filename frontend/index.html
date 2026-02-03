@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Smart Bus Management System</title>
+
+<style>
+body{
+    margin:0;
+    font-family: Arial, sans-serif;
+    background: linear-gradient(135deg,#007bff,#00c6ff);
+    color:white;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    height:100vh;
+}
+
+.container{
+    background:white;
+    color:#333;
+    width:90%;
+    max-width:420px;
+    padding:25px;
+    border-radius:18px;
+    text-align:center;
+    box-shadow:0 15px 35px rgba(0,0,0,.3);
+}
+
+h1{
+    margin-bottom:5px;
+}
+
+p{
+    color:#666;
+    margin-bottom:20px;
+}
+
+.btn{
+    display:block;
+    padding:15px;
+    margin:12px 0;
+    border:none;
+    border-radius:12px;
+    font-size:16px;
+    font-weight:bold;
+    cursor:pointer;
+    color:white;
+}
+
+.voice{ background:#007bff; }
+.seats{ background:#28a745; }
+.lost{ background:#ff9800; }
+.driver{ background:#673ab7; }
+
+.btn:hover{
+    opacity:0.85;
+}
+
+footer{
+    margin-top:15px;
+    font-size:13px;
+    color:#888;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+    <h1>🚌 Smart Bus System</h1>
+    <p>Select a service</p>
+
+    <button class="btn driver" onclick="openPage('driver.html')">
+        🚍 Driver Panel
+    </button>
+
+    <button class="btn voice" onclick="openPage('passenger.html')">
+        🔊 Voice & Wake-Up Alert
+    </button>
+
+    <button class="btn seats" onclick="openPage('seats.html')">
+        💺 Seat Reservation
+    </button>
+
+    <button class="btn lost" onclick="openPage('lostfound.html')">
+        🎒 Lost & Found
+    </button>
+
+    <footer>
+        Smart Bus Management System © 2026
+    </footer>
+</div>
+
+<script>
+function openPage(page){
+    window.location.href = page;
+}
+</script>
+
+</body>
+</html>
