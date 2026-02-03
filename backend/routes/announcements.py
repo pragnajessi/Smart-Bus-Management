@@ -1,24 +1,23 @@
 from fastapi import APIRouter
+from pydantic import BaseModel
 
 router = APIRouter()
 
-bus_stops = [
-    "Vijayawada",
-    "Guntur",
-    "Tenali",
-    "Ongole",
-    "Nellore",
-    "Tirupati"
-]
+stops = []   # ONE shared list
 
-current_stop = ""
+class Stop(BaseModel):
+    stop: str
 
-@router.get("/stops")
+@router.post("/add")
+def add_stop(data: Stop):
+    stops.append(data.stop)
+    return {"message": "Stop added"}
+
+@router.get("/")
 def get_stops():
-    return bus_stops
+    return stops
 
-@router.post("/announce")
-def announce(data: dict):
-    global current_stop
-    current_stop = data["stop"]
-    return {"message": f"Announcing {current_stop}"}
+@router.delete("/clear")
+def clear_stops():
+    stops.clear()
+    return {"message": "Cleared"}

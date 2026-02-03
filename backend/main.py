@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from routes import announcements
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List
@@ -31,7 +32,7 @@ def update_stop(data: StopUpdate):
 @app.get("/announcements")
 def get_announcements():
     return {"current_stop": current_stop}
-
+app.include_router(announcements.router, prefix="/announcements")
 
 # -------------------------------
 # 💺 SEAT RESERVATION
