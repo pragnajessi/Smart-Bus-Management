@@ -1,61 +1,112 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
+
 <head>
-<title>Driver Panel</title>
-<style>
-body{font-family:Arial;background:#eef2f7;padding:20px}
-.card{background:white;padding:20px;border-radius:15px;max-width:420px;margin:auto}
-select,button{width:100%;padding:12px;margin:10px 0;border-radius:8px}
-button{background:#28a745;color:white;font-size:16px}
-</style>
+  <meta charset="UTF-8">
+  <title>Driver Panel - Smart Bus</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: linear-gradient(to right, #2193b0, #6dd5ed);
+      margin: 0;
+      padding: 0;
+    }
+
+    .container {
+      max-width: 600px;
+      background: white;
+      margin: 80px auto;
+      padding: 30px;
+      border-radius: 15px;
+      box-shadow: 0 0 15px rgba(0, 0, 0, 0.3);
+      text-align: center;
+    }
+
+    input,
+    button {
+      padding: 10px;
+      margin: 10px;
+      width: 80%;
+      font-size: 16px;
+    }
+
+    button {
+      background: #6a11cb;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #4b0fa5;
+    }
+
+    ul {
+      list-style: none;
+      padding: 0;
+    }
+
+    li {
+      background: #f1f1f1;
+      margin: 5px;
+      padding: 8px;
+      border-radius: 6px;
+    }
+  </style>
 </head>
+
 <body>
 
-<div class="card">
-<h2>🚍 Driver Panel</h2>
+  <div class="container">
+    <h2>🚌 Driver Announcement Panel</h2>
 
-<select id="stop">
-<option>Vijayawada Bus Stand</option>
-<option>Guntur</option>
-<option>Rajahmundry</option>
-<option>Kakinada</option>
-<option>Tirupati</option>
-</select>
+    <input id="stopInput" placeholder="Enter Next Stop Name">
+    <button onclick="addStop()">Announce Stop</button>
 
-<button onclick="announce()">📢 Announce Stop</button>
+    <h3>📍 Upcoming Stops</h3>
+    <ul id="stopsList"></ul>
+  </div>
 
-<p id="msg"></p>
-</div>
+  <script>
+    const API = "http://127.0.0.1:8000/announcements";
 
-<script>
-let count=0;
+    // Add stop to backend
+    function addStop() {
+      const stop = document.getElementById("stopInput").value;
+      if (!stop) return alert("Enter stop name");
 
-function speakTwice(text){
- count=0;
- let speak = ()=>{
-   if(count<2){
-     let u=new SpeechSynthesisUtterance(text);
-     speechSynthesis.speak(u);
-     count++;
-     setTimeout(speak,2000);
-   }
- }
- speak();
-}
+      fetch(API + "/add", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ stop: stop })
+      })
+        .then(() => {
+          document.getElementById("stopInput").value = "";
+          loadStops();   // refresh list immediately
+        });
+    }
 
-async function announce(){
- let stop=document.getElementById("stop").value;
+    // Load all stops
+    function loadStops() {
+      fetch(API)
+        .then(res => res.json())
+        .then(data => {
+          const list = document.getElementById("stopsList");
+          list.innerHTML = "";
 
- await fetch("http://127.0.0.1:8000/update-stop",{
-   method:"POST",
-   headers:{"Content-Type":"application/json"},
-   body:JSON.stringify({stop})
- });
+          data.forEach(stop => {
+            const li = document.createElement("li");
+            li.textContent = stop;
+            list.appendChild(li);
+          });
+        });
+    }
 
- speakTwice("Next stop is "+stop);
- document.getElementById("msg").innerText="Announced: "+stop;
-}
-</script>
+    // Auto load when page opens
+    loadStops();
+  </script>
 
 </body>
+
 </html>
