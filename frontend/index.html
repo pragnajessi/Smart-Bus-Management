@@ -1,103 +1,177 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
+
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Smart Bus Management System</title>
+    <title>Smart Bus System</title>
 
-<style>
-body{
-    margin:0;
-    font-family: Arial, sans-serif;
-    background: linear-gradient(135deg,#007bff,#00c6ff);
-    color:white;
-    display:flex;
-    justify-content:center;
-    align-items:center;
-    height:100vh;
-}
+    <style>
+        body {
+            margin: 0;
+            font-family: Segoe UI, Arial;
+            height: 100vh;
+            background:
+                linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.6)),
+                url("https://images.unsplash.com/photo-1509749837427-ac94a2553d0e");
+            background-size: cover;
+            background-position: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
 
-.container{
-    background:white;
-    color:#333;
-    width:90%;
-    max-width:420px;
-    padding:25px;
-    border-radius:18px;
-    text-align:center;
-    box-shadow:0 15px 35px rgba(0,0,0,.3);
-}
+        .app {
+            background: white;
+            width: 90%;
+            max-width: 420px;
+            border-radius: 25px;
+            padding: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+            text-align: center;
+        }
 
-h1{
-    margin-bottom:5px;
-}
+        h1 {
+            margin-top: 0;
+        }
 
-p{
-    color:#666;
-    margin-bottom:20px;
-}
+        button {
+            width: 100%;
+            padding: 14px;
+            margin: 10px 0;
+            border: none;
+            border-radius: 14px;
+            font-size: 16px;
+            color: white;
+            cursor: pointer;
+            transition: .3s;
+        }
 
-.btn{
-    display:block;
-    padding:15px;
-    margin:12px 0;
-    border:none;
-    border-radius:12px;
-    font-size:16px;
-    font-weight:bold;
-    cursor:pointer;
-    color:white;
-}
+        button:hover {
+            opacity: .9
+        }
 
-.voice{ background:#007bff; }
-.seats{ background:#28a745; }
-.lost{ background:#ff9800; }
-.driver{ background:#673ab7; }
+        .driver {
+            background: #6a3fc8
+        }
 
-.btn:hover{
-    opacity:0.85;
-}
+        .voice {
+            background: #007bff
+        }
 
-footer{
-    margin-top:15px;
-    font-size:13px;
-    color:#888;
-}
-</style>
+        .seat {
+            background: #2ecc71
+        }
+
+        .lost {
+            background: #ff9800
+        }
+
+        .stopbtn {
+            background: #e74c3c
+        }
+
+        .module {
+            display: none;
+            margin-top: 15px;
+        }
+
+        input,
+        select {
+            width: 100%;
+            padding: 12px;
+            margin: 6px 0;
+            border-radius: 10px;
+            border: 1px solid #ccc;
+            font-size: 15px;
+        }
+    </style>
 </head>
 
 <body>
 
-<div class="container">
-    <h1>🚌 Smart Bus System</h1>
-    <p>Select a service</p>
+    <div class="app">
 
-    <button class="btn driver" onclick="openPage('driver.html')">
-        🚍 Driver Panel
-    </button>
+        <h1>🚌 Smart Bus System</h1>
+        <p>Select a service</p>
 
-    <button class="btn voice" onclick="openPage('passenger.html')">
-        🔊 Voice & Wake-Up Alert
-    </button>
+        <button class="driver" onclick="show('driver')">Driver Announcements</button>
+        <button class="voice" onclick="show('voice')">Wake-Up Alerts</button>
+        <button class="seat" onclick="show('seat')">Seat Reservation</button>
+        <button class="lost" onclick="show('lost')">Lost & Found</button>
 
-    <button class="btn seats" onclick="openPage('seats.html')">
-        💺 Seat Reservation
-    </button>
+        <!-- DRIVER -->
+        <div id="driver" class="module">
+            <h3>Driver Panel</h3>
+            <input id="driverStop" placeholder="Enter next stop">
+            <button onclick="driverAnnounce()">Announce</button>
+            <button class="stopbtn" onclick="stopVoice()">Stop</button>
+        </div>
 
-    <button class="btn lost" onclick="openPage('lostfound.html')">
-        🎒 Lost & Found
-    </button>
+        <!-- WAKEUP -->
+        <div id="voice" class="module">
+            <h3>Wake-Up Alert</h3>
+            <select id="wakeStop">
+                <option>Benz Circle</option>
+                <option>Bus Stand</option>
+                <option>Railway Station</option>
+                <option>Market</option>
+                <option>College Road</option>
+            </select>
+            <button onclick="wakeAlert()">Start Alert</button>
+            <button class="stopbtn" onclick="stopVoice()">Stop</button>
+        </div>
 
-    <footer>
-        Smart Bus Management System © 2026
-    </footer>
-</div>
+        <!-- SEATS -->
+        <div id="seat" class="module">
+            <h3>Seat Reservation</h3>
+            <input placeholder="Passenger name">
+            <input placeholder="Seat number">
+            <button>Book Seat</button>
+        </div>
 
-<script>
-function openPage(page){
-    window.location.href = page;
-}
-</script>
+        <!-- LOST -->
+        <div id="lost" class="module">
+            <h3>Lost & Found</h3>
+            <input placeholder="Lost item name">
+            <input placeholder="Contact number">
+            <button>Submit</button>
+        </div>
+
+    </div>
+
+    <script>
+        function show(id) {
+            document.querySelectorAll('.module').forEach(m => m.style.display = "none");
+            document.getElementById(id).style.display = "block";
+        }
+
+        function speak(text) {
+            let msg = new SpeechSynthesisUtterance(text);
+            msg.rate = 1;
+            msg.pitch = 1;
+            speechSynthesis.speak(msg);
+            speechSynthesis.speak(msg);   // repeat twice
+        }
+
+        function driverAnnounce() {
+            let stop = document.getElementById("driverStop").value;
+            if (stop === "") { alert("Enter stop name"); return; }
+
+            let text = "Attention passengers, next stop is " + stop + ". Please get ready.";
+            speak(text);
+        }
+
+        function wakeAlert() {
+            let stop = document.getElementById("wakeStop").value;
+
+            let text = "Attention passengers, your stop is arriving soon. Please be ready with your belongings.";
+            speak(text);
+        }
+
+        function stopVoice() {
+            speechSynthesis.cancel();
+        }
+    </script>
 
 </body>
+
 </html>
