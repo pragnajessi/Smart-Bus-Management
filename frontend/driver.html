@@ -107,36 +107,7 @@
       speechSynthesis.speak(msg);
     }
   </script>
-  <script>
-    let stops = [];
 
-    function addStop() {
-      const stop = document.getElementById("stopInput").value.trim();
-
-      if (!stop) {
-        alert("Enter stop name");
-        return;
-      }
-
-      stops.push(stop);
-
-      document.getElementById("stopInput").value = "";
-
-      const list = document.getElementById("stopsList");
-      list.innerHTML = "";
-
-      stops.forEach(s => {
-        const li = document.createElement("li");
-        li.textContent = s;
-        list.appendChild(li);
-      });
-
-      const msg = new SpeechSynthesisUtterance(
-        `Hello passengers, next stop is ${stop}`
-      );
-      speechSynthesis.speak(msg);
-    }
-  </script>
 
 
 </body>
