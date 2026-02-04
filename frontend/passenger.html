@@ -199,6 +199,36 @@
 
 
   </script>
+  <button onclick="moveBus()">Simulate Bus Move</button>
+
+  <script>
+    let lat = 16.5062;
+    let lng = 80.6480;
+
+    function moveBus() {
+      lat += 0.0003;
+      lng += 0.0003;
+
+      fetch("http://127.0.0.1:8000/gps/update", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ lat, lng })
+      })
+    }
+
+  </script>
+  <button onclick="getGPS()">Check Location</button>
+  <p id="loc"></p>
+
+  <script>
+    async function getGPS() {
+      const res = await fetch("http://127.0.0.1:8000/gps");
+      const d = await res.json();
+      document.getElementById("loc").innerText =
+        d.lat + " , " + d.lng;
+    }
+  </script>
+
 </body>
 
 </html>
