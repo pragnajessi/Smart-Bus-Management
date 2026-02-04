@@ -119,3 +119,15 @@ def home():
             "Lost and Found"
         ]
     }
+#ADD GPS TO YOUR EXISTING BACKEND
+bus_location = {"lat": 16.5062, "lng": 80.6480}
+
+@app.post("/gps/update")
+def update_gps(data: dict):
+    bus_location["lat"] = data["lat"]
+    bus_location["lng"] = data["lng"]
+    return {"status": "GPS updated"}
+
+@app.get("/gps")
+def get_gps():
+    return bus_location
