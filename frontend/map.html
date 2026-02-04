@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Live Bus Tracking</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial;
+        }
+
+        #map {
+            height: 100vh;
+            width: 100%;
+        }
+
+        .topbar {
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: white;
+            padding: 10px 15px;
+            border-radius: 10px;
+            font-weight: bold;
+            z-index: 999;
+            box-shadow: 0 0 10px rgba(0, 0, 0, .3);
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="topbar">🚌 Smart Bus Live Tracking</div>
+    <div id="map"></div>
+
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+    <script>
+        const map = L.map('map').setView([16.5062, 80.6480], 13);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+        }).addTo(map);
+
+        const busIcon = L.icon({
+            iconUrl: "https://cdn-icons-png.flaticon.com/512/61/61209.png",
+            iconSize: [40, 40]
+        });
+
+
+
+        const marker = L.marker([16.5062, 80.6480], { icon: busIcon }).addTo(map);
+
+        let lastLat = null;
+        let lastLng = null;
+
+        async function updateBus() {
+            const res = await fetch("http://127.0.0.1:8000/gps");
+            const data = await res.json();
+
+            const newLat = data.lat;
+            const newLng = data.lng;
+
+            if (lastLat === null) {
+                marker.setLatLng([newLat, newLng]);
+                lastLat = newLat;
+                lastLng = newLng;
+                return;
+            }
+
+            animateMarker(lastLat, lastLng, newLat, newLng);
+
+            lastLat = newLat;
+            lastLng = newLng;
+        }
+
+        function animateMarker(fromLat, fromLng, toLat, toLng) {
+            const steps = 30;
+            let step = 0;
+
+            const deltaLat = (toLat - fromLat) / steps;
+            const deltaLng = (toLng - fromLng) / steps;
+
+            const interval = setInterval(() => {
+                step++;
+
+                const lat = fromLat + deltaLat * step;
+                const lng = fromLng + deltaLng * step;
+
+                marker.setLatLng([lat, lng]);
+
+                if (step >= steps) clearInterval(interval);
+            }, 60);
+        }
+
+        setInterval(updateBus, 2000);
+
+    </script>
+
+
+</body>
+
+</html>
