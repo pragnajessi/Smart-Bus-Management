@@ -77,18 +77,22 @@
     let userStop = "";
     let lastStop = "";
 
-    function speakTwice(text) {
-      let count = 0;
-      function play() {
-        if (count < 2) {
-          let u = new SpeechSynthesisUtterance(text);
-          speechSynthesis.speak(u);
-          count++;
-          setTimeout(play, 2000);
-        }
-      }
-      play();
+    function speakWakeup() {
+      const msg = new SpeechSynthesisUtterance(
+        "Hello passenger, your stop is arriving shortly. Please prepare to get down safely."
+      );
+      msg.rate = 0.9;
+      msg.pitch = 1;
+      speechSynthesis.speak(msg);
     }
+
+
+    play();
+    if (dist < 0.3 && !alerted) {
+      alerted = true;
+      speakWakeup();
+    }
+
 
     function register() {
       userStop = document.getElementById("stop").value;
@@ -176,6 +180,22 @@
       loadGPS();
       checkEmergency();
     }, 3000);
+
+    const stopCoords = {
+      "Miyapur": [17.4933, 78.3915],
+      "Koti": [17.3850, 78.4867],
+      "LB Nagar": [17.3456, 78.5522],
+      "Hayathnagar": [17.3286, 78.6055],
+      "Nalgonda": [17.0575, 79.2680],
+      "Suryapet": [17.1400, 79.6200],
+      "Nandigama": [16.7720, 80.2850],
+      "Ibrahimpatnam": [17.3015, 78.6176],
+      "Bhavanipuram": [16.5065, 80.6000],
+      "PNBS": [16.5080, 80.6400],
+      "Benz Circle": [16.5078, 80.6484],
+      "Ramavarappadu Ring": [16.5200, 80.6500],
+      "Vijayawada": [16.5062, 80.6480]
+    };
 
 
   </script>
