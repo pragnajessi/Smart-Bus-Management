@@ -125,6 +125,31 @@
     }
   </script>
 
+  <h2>📍 Live GPS Tracking</h2>
+  <button onclick="startGPS()">Start GPS</button>
+
+  <h2>🚨 Emergency</h2>
+  <button style="background:red" onclick="sendEmergency()">Emergency Alert</button>
+
+  <script>
+    function startGPS() {
+      navigator.geolocation.watchPosition(pos => {
+        fetch("http://127.0.0.1:8000/gps/update", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            lat: pos.coords.latitude,
+            lng: pos.coords.longitude
+          })
+        })
+      })
+    }
+
+    function sendEmergency() {
+      fetch("http://127.0.0.1:8000/emergency", { method: "POST" })
+      alert("Emergency sent!")
+    }
+  </script>
 
 
 </body>

@@ -34,9 +34,17 @@
       color: white
     }
   </style>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
 </head>
 
 <body>
+  <h2>🗺 Live Bus Location</h2>
+  <div id="map" style="height:400px"></div>
+
+  <h3 id="eta"></h3>
+  <h2 id="emergencyBox" style="color:red"></h2>
 
   <div class="card">
     <h2>🎧 Passenger Wake-Up Alert</h2>
@@ -118,6 +126,58 @@
 
 
     setInterval(check, 3000);
+
+    const map = L.map('map').setView([16.5, 80.6], 13);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
+    let marker = L.marker([16.5, 80.6]).addTo(map);
+
+    function speak(text) {
+      speechSynthesis.speak(new SpeechSynthesisUtterance(text));
+    }
+
+    async function loadGPS() {
+      const res = await fetch("http://127.0.0.1:8000/gps");
+      const data = await res.json();
+
+      marker.setLatLng([data.lat, data.lng]);
+      map.setView([data.lat, data.lng]);
+
+      calculateETA(data.lat, data.lng);
+    }
+
+    async function checkEmergency() {
+      const res = await fetch("http://127.0.0.1:8000/emergency");
+      const data = await res.json();
+
+      if (data.emergency) {
+        document.getElementById("emergencyBox").innerText =
+          "🚨 EMERGENCY IN BUS!";
+        speak("Attention passengers. Emergency detected. Please stay calm.");
+      }
+    }
+
+    function calculateETA(lat, lng) {
+      const destLat = 16.5062;   // example stop
+      const destLng = 80.6480;
+
+      const dist = Math.sqrt(
+        Math.pow(destLat - lat, 2) + Math.pow(destLng - lng, 2)
+      ) * 111;
+
+      const speed = 40; // km/hr bus avg
+      const time = (dist / speed * 60).toFixed(1);
+
+      document.getElementById("eta").innerText =
+        `🕒 Estimated arrival: ${time} minutes`;
+    }
+
+    setInterval(() => {
+      loadGPS();
+      checkEmergency();
+    }, 3000);
+
+
   </script>
 </body>
 

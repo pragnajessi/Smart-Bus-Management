@@ -13,6 +13,31 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+# GPS and Emergence
+
+
+bus_location = {"lat": 0, "lng": 0}
+emergency = False
+
+@app.post("/gps/update")
+def update_location(data: dict):
+    bus_location["lat"] = data["lat"]
+    bus_location["lng"] = data["lng"]
+    return {"status": "updated"}
+
+@app.get("/gps")
+def get_location():
+    return bus_location
+
+@app.post("/emergency")
+def trigger_emergency():
+    global emergency
+    emergency = True
+    return {"status": "EMERGENCY"}
+
+@app.get("/emergency")
+def check_emergency():
+    return {"emergency": emergency}
 
 # -------------------------------
 # 🔊 ANNOUNCEMENTS + WAKEUP
