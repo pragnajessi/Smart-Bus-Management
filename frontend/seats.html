@@ -1,41 +1,194 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Smart Bus Seat Selection</title>
+
+<style>
+body{
+  margin:0;
+  font-family:Segoe UI,Tahoma,Geneva,Verdana,sans-serif;
+  background:linear-gradient(135deg,#fefefe,#e0f7fa);
+}
+header{text-align:center;padding:30px}
+header h1{color:#00796b;font-size:42px}
+.container{
+  max-width:900px;margin:auto;background:#fff;
+  padding:20px;border-radius:20px;
+}
+.card{
+  background:#e0f2f1;padding:20px;
+  border-radius:15px;margin-bottom:20px;
+}
+.input-group{margin-bottom:12px}
+label{font-weight:bold}
+input,select{
+  width:100%;padding:8px;border-radius:8px;
+}
+.bus{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:10px;
+}
+.seat{
+  padding:15px;
+  background:#80cbc4;
+  text-align:center;
+  border-radius:8px;
+  cursor:pointer;
+  font-weight:bold;
+  position:relative;
+}
+.seat.booked{background:#ff8a65;cursor:not-allowed}
+.seat.selected{background:#ffeb3b}
+.info{font-size:10px;margin-top:4px}
+
+/* tooltip */
+.tooltip{
+  display:none;
+  position:absolute;
+  bottom:110%;
+  left:50%;
+  transform:translateX(-50%);
+  background:#333;
+  color:#fff;
+  padding:5px 8px;
+  font-size:11px;
+  border-radius:5px;
+  white-space:nowrap;
+}
+.seat.booked:hover .tooltip{display:block}
+
+.stats div{font-weight:bold}
+</style>
+</head>
+
 <body>
-<h2>💺 Seat Reservation</h2>
-<div id="seats"></div>
+
+<header>
+<h1>🚌 Smart Bus Management System</h1>
+</header>
+
+<div class="container">
+
+<div class="card">
+<h2>Passenger Details</h2>
+<div class="input-group">
+<label>Name</label>
+<input id="name">
+</div>
+<div class="input-group">
+<label>Age</label>
+<input id="age" type="number">
+</div>
+<div class="input-group">
+<label>Gender</label>
+<select id="gender">
+<option>Female</option>
+<option>Male</option>
+</select>
+</div>
+<div class="input-group">
+<label>Disability</label>
+<select id="disability">
+<option>No Disability</option>
+<option>Disability</option>
+</select>
+</div>
+</div>
+
+<div class="card">
+<h2>Select Seat</h2>
+<div class="bus">
+  <div class="seat" data-seat="A1">A1<div class="info"></div><div class="tooltip"></div></div>
+  <div class="seat booked" data-seat="A2">A2<div class="info">Female, No Disability</div><div class="tooltip">Name: Anu<br>Female, No Disability</div></div>
+  <div class="seat booked" data-seat="A3">A3<div class="info">Male, No Disability</div><div class="tooltip">Name: Ravi<br>Male, No Disability</div></div>
+  <div class="seat" data-seat="A4">A4<div class="info"></div><div class="tooltip"></div></div>
+  <div class="seat" data-seat="B1">B1<div class="info"></div><div class="tooltip"></div></div>
+  <div class="seat booked" data-seat="B2">B2<div class="info">Male, No Disability</div><div class="tooltip">Name: Kiran<br>Male, No Disability</div></div>
+  <div class="seat" data-seat="B3">B3<div class="info"></div><div class="tooltip"></div></div>
+  <div class="seat booked" data-seat="B4">B4<div class="info">Female, Disability</div><div class="tooltip">Name: Meena<br>Female, Disability</div></div>
+  <div class="seat" data-seat="C1">C1<div class="info"></div><div class="tooltip"></div></div>
+  <div class="seat booked" data-seat="C2">C2<div class="info">Male, No Disability</div><div class="tooltip">Name: Arjun<br>Male, No Disability</div></div>
+</div>
+</div>
+
+<button onclick="bookSeat()">Book Selected Seat</button>
+<div class="stats" id="stats"></div>
+
+</div>
 
 <script>
-const API="http://127.0.0.1:8000";
+const seats={
+A1:null,
+A2:{name:'Anu',g:'Female',d:'No Disability'},
+A3:{name:'Ravi',g:'Male',d:'No Disability'},
+A4:null,
+B1:null,
+B2:{name:'Kiran',g:'Male',d:'No Disability'},
+B3:null,
+B4:{name:'Meena',g:'Female',d:'Disability'},
+C1:null,
+C2:{name:'Arjun',g:'Male',d:'No Disability'}
+};
 
-function load(){
- fetch(API+"/seats").then(r=>r.json()).then(data=>{
-   seats.innerHTML="";
-   for(let i=0;i<20;i++){
-     let btn=document.createElement("button");
-     btn.innerText="Seat "+(i+1);
-     btn.style.margin="5px";
+let selectedSeat=null;
 
-     if(data.find(s=>s.seat_no===i)){
-        btn.disabled=true;
-        btn.style.background="red";
-     }
+// seat click
+document.querySelectorAll('.seat').forEach(seat=>{
+  seat.onclick=()=>{
+    const s=seat.dataset.seat;
+    if(seats[s]) return;
+    document.querySelectorAll('.seat').forEach(x=>x.classList.remove('selected'));
+    seat.classList.add('selected');
+    selectedSeat=s;
+  };
+});
 
-     btn.onclick=()=>reserve(i);
-     seats.appendChild(btn);
-   }
- });
+// book seat
+function bookSeat(){
+  if(!selectedSeat) return alert("Please select a seat");
+  if(!name.value||!age.value) return alert("Enter passenger details");
+
+  const n=name.value;
+  const g=gender.value;
+  const d=disability.value;
+
+  seats[selectedSeat]={name:n,g,d};
+
+  const seatDiv=[...document.querySelectorAll('.seat')]
+    .find(x=>x.dataset.seat===selectedSeat);
+
+  seatDiv.classList.remove('selected');
+  seatDiv.classList.add('booked');
+
+  // 🔥 correct update
+  seatDiv.querySelector('.info').innerText = `${g}, ${d}`;
+  seatDiv.querySelector('.tooltip').innerHTML =
+    `Name: ${n}<br>${g}, ${d}`;
+
+  selectedSeat=null;
+  updateStats();
 }
 
-function reserve(i){
- let name=prompt("Your name:");
- fetch(API+"/reserve-seat",{
-  method:"POST",
-  headers:{"Content-Type":"application/json"},
-  body:JSON.stringify({seat_no:i,name})
- }).then(load);
+// stats
+function updateStats(){
+  let p=0,m=0,f=0;
+  for(let s in seats){
+    if(seats[s]){
+      p++;
+      seats[s].g==='Male'?m++:f++;
+    }
+  }
+  stats.innerHTML=`
+    <div>Total Seats: 10</div>
+    <div>Passengers: ${p}</div>
+    <div>Males: ${m}</div>
+    <div>Females: ${f}</div>`;
 }
 
-load();
+updateStats();
 </script>
+
 </body>
 </html>
