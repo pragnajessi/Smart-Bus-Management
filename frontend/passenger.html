@@ -29,6 +29,7 @@
       border-radius: 8px
     }
 
+
     button {
       background: #007bff;
       color: white
@@ -36,21 +37,16 @@
   </style>
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-
 </head>
 
 <body>
   <h2>🗺 Live Bus Location</h2>
   <div id="map" style="height:400px"></div>
-
   <h3 id="eta"></h3>
   <h2 id="emergencyBox" style="color:red"></h2>
-
   <div class="card">
     <h2>🎧 Passenger Wake-Up Alert</h2>
-
     <input id="name" placeholder="Your name">
-
     <select id="stop">
       <option>Miyapur</option>
       <option>Koti</option>
@@ -65,122 +61,97 @@
       <option>Benz Circle</option>
       <option>Ramavarappadu Ring</option>
       <option>Vijayawada</option>
-
     </select>
-
     <button onclick="registerPassenger()">Register</button>
-
     <p id="status">Waiting...</p>
   </div>
-
   <script>
     let userStop = "";
     let lastStop = "";
-
     function speakWakeup() {
       const msg = new SpeechSynthesisUtterance(
-        "Hello passenger, your stop is arriving shortly. Please prepare to get down safely."
+        " passenger, your stop is arriving shortly. Please prepare to get down safely."
       );
       msg.rate = 0.9;
       msg.pitch = 1;
       speechSynthesis.speak(msg);
     }
-
-
     play();
     if (dist < 0.3 && !alerted) {
       alerted = true;
       speakWakeup();
     }
-
-
     function register() {
       userStop = document.getElementById("stop").value;
       status.innerText = "Registered for " + userStop;
     }
-
     async function check() {
       let res = await fetch("http://127.0.0.1:8000/announcements");
       let data = await res.json();
-
       if (data.current_stop && data.current_stop !== lastStop) {
         lastStop = data.current_stop;
-
         speakTwice("Next stop is " + data.current_stop);
-
         if (data.current_stop === userStop) {
-          speakTwice("Hello. Your stop has arrived. Please collect your belongings");
+          speakTwice("Attention. Your stop has arrived. Please collect your belongings");
         }
       }
     }
-
     function registerPassenger() {
       const name = document.getElementById("name").value;
       const stop = document.getElementById("destination").value;
-
       if (!name || !stop) {
         alert("Enter name and stop");
         return;
       }
-
       document.getElementById("status").innerText =
         "✅ Registered successfully. Waiting for alert...";
     }
     <p id="status"></p>
-
-
-    setInterval(check, 3000);
-
     const map = L.map('map').setView([16.5, 80.6], 13);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-
-    let marker = L.marker([16.5, 80.6]).addTo(map);
-
     function speak(text) {
       speechSynthesis.speak(new SpeechSynthesisUtterance(text));
     }
-
     async function loadGPS() {
       const res = await fetch("http://127.0.0.1:8000/gps");
       const data = await res.json();
-
+      const marker = L.marker([16.5062, 80.6480], { icon: busIcon }).addTo(map);
+      const busIcon = L.icon({
+        iconUrl: "https://cdn-icons-png.flaticon.com/512/61/61231.png",
+        iconSize: [40, 40],
+        iconAnchor: [20, 20]
+      });
       marker.setLatLng([data.lat, data.lng]);
       map.setView([data.lat, data.lng]);
-
+      SetInterval(updateBus, 2000);
       calculateETA(data.lat, data.lng);
-    }
+      checkStopArrival(data.lat, data.lng);
+      let announcedStops = new Set();
+      function checkStopArrival(busLat, busLng) {
+        stops.forEach(stop => {
+          const distance = getDistance(busLat, busLng, stop.lat, stop.lng);
+          if (distance < 150 && !announcedStops.has(stop.name)) {
+            announcedStops.add(stop.name);
+            announceStop(stop.name);
+            showStopMessage(stop.name);
+          }
+        });
+      }
 
+    }
     async function checkEmergency() {
       const res = await fetch("http://127.0.0.1:8000/emergency");
       const data = await res.json();
-
       if (data.emergency) {
         document.getElementById("emergencyBox").innerText =
           "🚨 EMERGENCY IN BUS!";
         speak("Attention passengers. Emergency detected. Please stay calm.");
       }
     }
-
-    function calculateETA(lat, lng) {
-      const destLat = 16.5062;   // example stop
-      const destLng = 80.6480;
-
-      const dist = Math.sqrt(
-        Math.pow(destLat - lat, 2) + Math.pow(destLng - lng, 2)
-      ) * 111;
-
-      const speed = 40; // km/hr bus avg
-      const time = (dist / speed * 60).toFixed(1);
-
-      document.getElementById("eta").innerText =
-        `🕒 Estimated arrival: ${time} minutes`;
-    }
-
     setInterval(() => {
       loadGPS();
       checkEmergency();
     }, 3000);
-
     const stopCoords = {
       "Miyapur": [17.4933, 78.3915],
       "Koti": [17.3850, 78.4867],
@@ -196,30 +167,31 @@
       "Ramavarappadu Ring": [16.5200, 80.6500],
       "Vijayawada": [16.5062, 80.6480]
     };
-
-
-  </script>
-  <button onclick="moveBus()">Simulate Bus Move</button>
-
-  <script>
-    let lat = 16.5062;
-    let lng = 80.6480;
-
-    function moveBus() {
-      lat += 0.0003;
-      lng += 0.0003;
-
+    function getDistance(lat1, lng1, lat2, lng2) {
+      const R = 6371;
+      const dLat = (lat2 - lat1) * Math.PI / 180;
+      const dLng = (lng2 - lng1) * Math.PI / 180;
+      const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(lat1 * Math.PI / 180) *
+        Math.cos(lat2 * Math.PI / 180) *
+        Math.sin(dLng / 2) * Math.sin(dLng / 2);
+      return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)) * 1000;
+    }
+    navigator.geolocation.watchPosition(pos => {
       fetch("http://127.0.0.1:8000/gps/update", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ lat, lng })
-      })
-    }
-
+        body: JSON.stringify({
+          lat: pos.coords.latitude,
+          lng: pos.coords.longitude
+        })
+      });
+    });
   </script>
+  <button onclick="moveBus()">Simulate Bus Move</button>
   <button onclick="getGPS()">Check Location</button>
   <p id="loc"></p>
-
   <script>
     async function getGPS() {
       const res = await fetch("http://127.0.0.1:8000/gps");
@@ -227,8 +199,20 @@
       document.getElementById("loc").innerText =
         d.lat + " , " + d.lng;
     }
+    function announceStop(stop) {
+      const msg = new SpeechSynthesisUtterance(
+        `Attention passengers. ${stop} stop is arriving. Please prepare to get down.`
+      );
+      msg.rate = 0.95;
+      msg.pitch = 1.1;
+      speechSynthesis.speak(msg);
+    }
+    function showStopMessage(stop) {
+      const div = document.getElementById("status");
+      div.innerHTML = `🚌 Arriving at <b>${stop}</b>`;
+    }
   </script>
-
 </body>
+<div id="status"></div>
 
 </html>
