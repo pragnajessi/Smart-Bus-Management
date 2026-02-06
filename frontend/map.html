@@ -4,9 +4,7 @@
 <head>
     <meta charset="utf-8">
     <title>Live Bus Tracking</title>
-
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-
     <style>
         #map {
             height: 100vh;
@@ -15,37 +13,27 @@
 </head>
 
 <body>
-
     <div id="map"></div>
-
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-
     <script>
         const map = L.map("map").setView([16.5062, 80.6480], 15);
-
         L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
-
         // 🚌 Bus icon
         const busIcon = L.icon({
             iconUrl: "https://cdn-icons-png.flaticon.com/512/61/61231.png",
             iconSize: [40, 40],
             iconAnchor: [20, 20]
         });
-
         const marker = L.marker([16.5062, 80.6480], { icon: busIcon }).addTo(map);
-
         // 📡 Live GPS update
         async function updateBus() {
             const res = await fetch("http://127.0.0.1:8000/gps");
             const data = await res.json();
-
             marker.setLatLng([data.lat, data.lng]);
             map.panTo([data.lat, data.lng]);
         }
-
         setInterval(updateBus, 2000);
     </script>
-
 </body>
 
 </html>
