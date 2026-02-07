@@ -1,17 +1,41 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
 <head>
-    <title>Smart Bus Live Map</title>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css">
-    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+    <meta charset="UTF-8">
+    <title>Smart Bus System</title>
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
     <style>
         body {
             margin: 0;
+            font-family: Arial
         }
 
         #map {
             height: 100vh;
+            width: 100%
+        }
+
+        .panel {
+            position: absolute;
+            right: 10px;
+            top: 10px;
+            width: 330px;
+            background: #fff;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 6px 18px rgba(0, 0, 0, .3);
+            z-index: 999;
+        }
+
+        .alert {
+            background: #e3f2fd;
+            padding: 6px;
+            border-radius: 6px;
+            margin-top: 6px
         }
     </style>
 </head>
@@ -20,104 +44,172 @@
 
     <div id="map"></div>
 
+    <div class="panel">
+        <h3>🚌 Bus System</h3>
+        <div>Lat: <span id="lat">--</span></div>
+        <div>Lng: <span id="lng">--</span></div>
+        <div class="alert" id="nextStop">Next Stop: --</div>
+        <button onclick="startBus()">▶ Start Bus</button>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
     <script>
+        let passengerAlertCompleted = false;
+
+        /* ================= SETTINGS ================= */
+
+        // TIMING RULES (your requirement)
+        const STOP_TO_STOP_TIME = 3 * 60 * 1000; // 3 minutes
+        const NEAR_TIME = 1 * 60 * 1000;         // 1 minutes before arrival
+
         const channel = new BroadcastChannel("bus_channel");
 
-        /* ===== BUS STOPS ===== */
-        const stops = {
-            "Miyapur": [16.5062, 80.6480],
-            "Koti": [16.5166, 80.6160],
-            "LB Nagar": [16.5450, 80.6100],
-            "Hayathnagar": [16.5620, 80.6050],
-            "Nalgonda": [16.5800, 80.5950],
-            "Suryapet": [16.6100, 80.5800],
-            "Nandigama": [16.6300, 80.5600],
-            "Ibrahimpatnam": [16.6500, 80.5400],
-            "Bhavanipuram": [16.6700, 80.5200],
-            "PNBS": [16.6900, 80.5000],
-            "Benz Circle": [16.7100, 80.4800],
-            "Ramavarappadu Ring": [16.7300, 80.4600],
-            "Vijayawada": [16.7500, 80.4400]
-        };
+        /* ================= STOPS ================= */
 
-        /* ===== MAP SETUP ===== */
-        const map = L.map("map").setView(stops["Miyapur"], 12);
+        const stops = [
+            { name: "Miyapur", lat: 17.3850, lng: 78.4867 },
+            { name: "Koti", lat: 17.3858, lng: 78.4860 },
+            { name: "LB Nagar", lat: 17.3456, lng: 78.5521 },
+            { name: "Hayathnagar", lat: 17.3273, lng: 78.5936 },
+            { name: "Nalgonda", lat: 17.0575, lng: 79.2676 },
+            { name: "Suryapet", lat: 17.1400, lng: 79.6200 },
+            { name: "Nandigama", lat: 16.7725, lng: 80.2870 },
+            { name: "Ibrahimpatnam", lat: 16.5945, lng: 80.5047 },
+            { name: "Bhavanipuram", lat: 16.5150, lng: 80.6080 },
+            { name: "PNBS", lat: 16.5060, lng: 80.6485 },
+            { name: "Benz Circle", lat: 16.5075, lng: 80.6660 },
+            { name: "Ramavarappadu Ring", lat: 16.5192, lng: 80.6742 },
+            { name: "Vijayawada", lat: 16.5062, lng: 80.6480 }
+        ];
+
+        /* ================= MAP ================= */
+
+        const map = L.map("map").setView([stops[0].lat, stops[0].lng], 7);
         L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
 
-        /* ===== ICONS ===== */
         const busIcon = L.icon({
-            iconUrl: "https://cdn-icons-png.flaticon.com/512/61/61231.png",
-            iconSize: [45, 45]
+            iconUrl: "https://img.icons8.com/emoji/48/bus-emoji.png",
+            iconSize: [48, 48],
+            iconAnchor: [24, 24]
         });
 
-        const stopIcon = L.icon({
-            iconUrl: "https://cdn-icons-png.flaticon.com/512/684/684908.png",
-            iconSize: [28, 28]
+
+        const bus = L.marker([stops[0].lat, stops[0].lng], { icon: busIcon }).addTo(map);
+
+        stops.forEach(s => {
+            L.circleMarker([s.lat, s.lng], { radius: 6, color: "green" })
+                .addTo(map).bindPopup(s.name);
         });
 
-        const emergencyIcon = L.icon({
-            iconUrl: "https://cdn-icons-png.flaticon.com/512/564/564619.png",
-            iconSize: [40, 40]
-        });
+        L.polyline(stops.map(s => [s.lat, s.lng]), { color: "blue" }).addTo(map);
 
-        /* ===== DRAW STOPS ON MAP ===== */
-        Object.entries(stops).forEach(([name, coords]) => {
-            L.marker(coords, { icon: stopIcon })
-                .addTo(map)
-                .bindPopup(name);
-        });
+        /* ================= STATE ================= */
 
-        /* ===== BUS MARKER ===== */
-        let bus = L.marker(stops["Miyapur"], { icon: busIcon }).addTo(map);
+        let index = 0;
+        let startTime = null;
+        let nearAnnounced = false;
+        let arrivedAnnounced = false;
 
-        /* ===== HELPERS ===== */
-        function distance(lat1, lng1, lat2, lng2) {
-            return Math.sqrt((lat1 - lat2) ** 2 + (lng1 - lng2) ** 2) * 111;
+        /* ================= VOICE ================= */
+
+        function speak(text) {
+            speechSynthesis.cancel();
+            speechSynthesis.speak(new SpeechSynthesisUtterance(text));
         }
 
-        let announced = {};
+        /* ================= BUS START ================= */
 
-        /* ===== RECEIVE GPS & EMERGENCY ===== */
+        function startBus() {
+            speak("Bus journey started");
+            startTime = Date.now();
+            setInterval(updateBus, 1000); // update every second
+        }
+
+        /* ================= CORE LOGIC ================= */
+        function calculateETA(lat1, lon1, lat2, lon2) {
+            const R = 6371; // Earth radius in km
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+
+            const a =
+                Math.sin(dLat / 2) ** 2 +
+                Math.cos(lat1 * Math.PI / 180) *
+                Math.cos(lat2 * Math.PI / 180) *
+                Math.sin(dLon / 2) ** 2;
+
+            const distanceKm = R * 2 * Math.asin(Math.sqrt(a));
+            const speed = 40; // km/h
+
+            return Math.round((distanceKm / speed) * 60); // minutes
+        }
+
+        function updateBus() {
+            if (index >= stops.length - 1) return;
+
+            const A = stops[index];
+            const B = stops[index + 1];
+
+            const elapsed = Date.now() - startTime;
+            const progress = Math.min(elapsed / STOP_TO_STOP_TIME, 1);
+
+            const lat = A.lat + (B.lat - A.lat) * progress;
+            const lng = A.lng + (B.lng - A.lng) * progress;
+
+            bus.setLatLng([lat, lng]);
+            map.panTo([lat, lng]);
+
+            document.getElementById("lat").innerText = lat.toFixed(5);
+            document.getElementById("lng").innerText = lng.toFixed(5);
+
+            channel.postMessage({ type: "gps", lat, lng });
+
+            const remaining = STOP_TO_STOP_TIME - elapsed;
+            const mins = Math.ceil(remaining / 60000);
+
+            document.getElementById("nextStop").innerText =
+                `Next Stop: ${B.name} | ETA ${mins} min`;
+
+            /* ---- ANNOUNCEMENTS ---- */
+
+            if (remaining <= NEAR_TIME && !nearAnnounced) {
+                speak(`Attention passengers, next stop is ${B.name}, arriving soon, Please be ready with your belongings.`);
+                channel.postMessage({ type: "announce", stop: B.name, stage: "near" });
+                nearAnnounced = true;
+            }
+
+            if (progress >= 1 && !arrivedAnnounced) {
+                speak(`Attention passengers, ${B.name} stop has arrived. PLease get down safely`);
+                channel.postMessage({ type: "announce", stop: B.name, stage: "arrived" });
+                arrivedAnnounced = true;
+
+                // Move to next stop after arrival
+                index++;
+                startTime = Date.now();
+                nearAnnounced = false;
+                arrivedAnnounced = false;
+            }
+            if (currentStopIndex === stops.length - 1) {
+                speak("Bus has reached the final destination. Thank you for traveling.");
+                clearInterval(busInterval); // ✅ correct place to stop bus
+            }
+
+        }
+
+        /* ================= EMERGENCY ================= */
+
         channel.onmessage = e => {
-            const data = e.data;
-
-            /* GPS UPDATE */
-            if (data.type === "gps") {
-                bus.setLatLng([data.lat, data.lng]);
-                map.panTo([data.lat, data.lng]);
-
-                for (let stop in stops) {
-                    const [slat, slng] = stops[stop];
-                    const d = distance(data.lat, data.lng, slat, slng);
-
-                    const speed = 35; // km/h
-                    const eta = (d / speed) * 60;
-
-                    channel.postMessage({
-                        type: "eta",
-                        stop,
-                        minutes: eta.toFixed(1)
-                    });
-
-                    if (eta <= 2 && !announced[stop]) {
-                        announced[stop] = "near";
-                        channel.postMessage({ type: "announce", stop, stage: "near" });
-                    }
-
-                    if (d < 0.2 && announced[stop] === "near") {
-                        announced[stop] = "arrived";
-                        channel.postMessage({ type: "announce", stop, stage: "arrived" });
-                    }
-                }
+            if (e.data.type === "emergency") {
+                L.marker([e.data.lat, e.data.lng]).addTo(map)
+                    .bindPopup("🚨 Emergency").openPopup();
+                speak("Attention Passengers!Emergency reported.DO not panic!Our team is on the way to help you.");
             }
+            channel.postMessage({
+                type: "announce",
+                stop: stopName,
+                stage: "near" | "arrived"
+            });
 
-            /* EMERGENCY */
-            if (data.type === "emergency") {
-                L.marker([data.lat, data.lng], { icon: emergencyIcon })
-                    .addTo(map)
-                    .bindPopup("🚨 Emergency Alert")
-                    .openPopup();
-            }
         };
     </script>
 

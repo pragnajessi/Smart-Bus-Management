@@ -1,23 +1,31 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
 <head>
+  <meta charset="UTF-8">
   <title>Passenger Wake-Up Alerts</title>
+
   <style>
     body {
-      background: #007bff;
+      background: #1976d2;
       font-family: Arial;
-      padding: 20px;
+      margin: 0;
+      padding: 0;
       color: white;
     }
 
     .card {
+      max-width: 420px;
+      margin: 40px auto;
       background: white;
       color: black;
       padding: 20px;
       border-radius: 15px;
-      max-width: 420px;
-      margin: auto;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, .3);
+    }
+
+    h2 {
+      text-align: center
     }
 
     select,
@@ -25,18 +33,31 @@
       width: 100%;
       padding: 12px;
       margin-top: 12px;
-      border-radius: 8px;
       font-size: 16px;
+      border-radius: 8px;
     }
 
     button {
-      background: #007bff;
+      background: #1976d2;
       color: white;
       border: none;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #0d47a1
     }
 
     .emergency {
       background: red;
+      font-size: 18px;
+    }
+
+    .status {
+      margin-top: 15px;
+      padding: 10px;
+      background: #f1f1f1;
+      border-radius: 8px;
     }
   </style>
 </head>
@@ -44,9 +65,10 @@
 <body>
 
   <div class="card">
-    <h2>Passenger Wake-Up Alert</h2>
+    <h2>🚌 Passenger Wake-Up Alert</h2>
 
     <select id="stop">
+      <option value="">Select your stop</option>
       <option>Miyapur</option>
       <option>Koti</option>
       <option>LB Nagar</option>
@@ -65,73 +87,80 @@
     <button onclick="register()">Register</button>
     <button class="emergency" onclick="sendEmergency()">🚨 Emergency</button>
 
-    <p id="status">Please select your stop and register.</p>
+    <div id="status" class="status">
+      Please select your stop and register.
+    </div>
   </div>
 
   <script>
     const channel = new BroadcastChannel("bus_channel");
 
-    let myStop = "";
-    let nearAlert = false;
-    let arrivedAlert = false;
+    let passengers = [];
 
     function speak(text) {
       const msg = new SpeechSynthesisUtterance(text);
-      msg.rate = 0.95;
+      msg.rate = 0.9;
       speechSynthesis.speak(msg);
     }
 
     function register() {
-      myStop = document.getElementById("stop").value;
+      const stop = document.getElementById("stop").value;
+
+      const passenger = {
+        name: "Passenger",
+        stop: stop,
+        nearAlerted: false,
+        arrivedAlerted: false
+      };
+
+      passengers.push(passenger);
+
       document.getElementById("status").innerText =
-        "✅ Registration successful! Waiting for " + myStop;
-      speak("Registration successful. You will be alerted for " + myStop);
+        "✅ Registration successful for stop " + stop;
+
+      speak("Registration successful. You will be alerted for " + stop);
     }
 
-    /* SEND GPS */
-    navigator.geolocation.watchPosition(pos => {
-      channel.postMessage({
-        type: "gps",
-        lat: pos.coords.latitude,
-        lng: pos.coords.longitude
-      });
-    });
-
-    /* RECEIVE ANNOUNCEMENTS + ETA */
     channel.onmessage = e => {
       const data = e.data;
 
-      if (data.type === "announce" && data.stop === myStop) {
+      if (data.type === "announce") {
+        passengers.forEach(p => {
+          if (p.stop === data.stop) {
 
-        if (data.stage === "near" && !nearAlert) {
-          speak("Attention passenger, your stop is arriving soon. Please get ready with your belongings.");
-          nearAlert = true;
-        }
+            if (data.stage === "near" && !p.nearAlerted) {
+              speak(
+                "Attention passenger. Your stop is arriving soon. Please get ready with your belongings."
+              );
+              p.nearAlerted = true;
+            }
 
-        if (data.stage === "arrived" && !arrivedAlert) {
-          speak("Attention passenger, your stop has arrived.");
-          arrivedAlert = true;
-        }
-      }
+            if (data.stage === "arrived" && !p.arrivedAlerted) {
+              speak(
+                "Attention passenger. Your stop has arrived. Please get down safely."
+              );
+              p.arrivedAlerted = true;
+            }
 
-      if (data.type === "eta" && data.stop === myStop) {
-        document.getElementById("status").innerText =
-          "⏱ ETA: " + data.minutes + " minutes";
+          }
+        });
       }
     };
 
-    /* EMERGENCY */
     function sendEmergency() {
-      navigator.geolocation.getCurrentPosition(pos => {
+      navigator.geolocation.getCurrentPosition(p => {
         channel.postMessage({
           type: "emergency",
-          lat: pos.coords.latitude,
-          lng: pos.coords.longitude
+          lat: p.coords.latitude,
+          lng: p.coords.longitude
         });
       });
-      speak("Emergency alert sent successfully.");
+
+      speak("Emergency alert sent. Help will arrive soon.");
     }
   </script>
+
+
 
 </body>
 
