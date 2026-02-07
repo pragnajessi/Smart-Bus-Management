@@ -2,8 +2,7 @@
 <html>
 
 <head>
-  <title>Passenger Panel</title>
-
+  <title>Passenger Wake-Up Alerts</title>
   <style>
     body {
       background: #007bff;
@@ -38,7 +37,6 @@
 
     .emergency {
       background: red;
-      font-size: 18px;
     }
   </style>
 </head>
@@ -77,27 +75,29 @@
     let nearAlert = false;
     let arrivedAlert = false;
 
-    function speak(msg) {
-      speechSynthesis.speak(new SpeechSynthesisUtterance(msg));
+    function speak(text) {
+      const msg = new SpeechSynthesisUtterance(text);
+      msg.rate = 0.95;
+      speechSynthesis.speak(msg);
     }
 
     function register() {
       myStop = document.getElementById("stop").value;
       document.getElementById("status").innerText =
-        "✅ Registration successful! You will be alerted for " + myStop;
+        "✅ Registration successful! Waiting for " + myStop;
       speak("Registration successful. You will be alerted for " + myStop);
     }
 
-    // Send GPS continuously
-    navigator.geolocation.watchPosition(p => {
+    /* SEND GPS */
+    navigator.geolocation.watchPosition(pos => {
       channel.postMessage({
         type: "gps",
-        lat: p.coords.latitude,
-        lng: p.coords.longitude
+        lat: pos.coords.latitude,
+        lng: pos.coords.longitude
       });
     });
 
-    // Receive announcements
+    /* RECEIVE ANNOUNCEMENTS + ETA */
     channel.onmessage = e => {
       const data = e.data;
 
@@ -109,22 +109,27 @@
         }
 
         if (data.stage === "arrived" && !arrivedAlert) {
-          speak("Your stop has arrived. Please get down safely.");
+          speak("Attention passenger, your stop has arrived.");
           arrivedAlert = true;
         }
       }
+
+      if (data.type === "eta" && data.stop === myStop) {
+        document.getElementById("status").innerText =
+          "⏱ ETA: " + data.minutes + " minutes";
+      }
     };
 
-    // Emergency
+    /* EMERGENCY */
     function sendEmergency() {
-      navigator.geolocation.getCurrentPosition(p => {
+      navigator.geolocation.getCurrentPosition(pos => {
         channel.postMessage({
           type: "emergency",
-          lat: p.coords.latitude,
-          lng: p.coords.longitude
+          lat: pos.coords.latitude,
+          lng: pos.coords.longitude
         });
       });
-      speak("Emergency alert sent successfully");
+      speak("Emergency alert sent successfully.");
     }
   </script>
 
