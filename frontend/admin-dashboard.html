@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Admin Dashboard - Smart Bus System</title>
+
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css">
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial;
+            background: #f2f2f2;
+        }
+
+        .layout {
+            display: flex;
+            height: 100vh;
+        }
+
+        #map {
+            flex: 2;
+        }
+
+        .panel {
+            flex: 1;
+            background: white;
+            padding: 20px;
+            overflow-y: auto;
+            box-shadow: -2px 0 6px rgba(0, 0, 0, 0.1);
+        }
+
+        h2 {
+            margin-bottom: 15px;
+        }
+
+        .box {
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 6px;
+            background: #eef;
+            font-size: 14px;
+        }
+
+        .alert {
+            background: #fff3cd;
+            border-left: 5px solid orange;
+        }
+
+        .emergency {
+            background: #f8d7da;
+            border-left: 5px solid red;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="layout">
+
+        <div id="map"></div>
+
+        <div class="panel">
+            <h2>🛠 Admin Dashboard</h2>
+
+            <div class="box">📍 Bus Latitude: <span id="lat">--</span></div>
+            <div class="box">📍 Bus Longitude: <span id="lng">--</span></div>
+
+            <h3>📢 Announcements</h3>
+            <div id="logs"></div>
+        </div>
+        <h3>⏱ ETA Per Stop</h3>
+        <div id="etaBox"></div>
+    </div>
+
+    <script>
+        const channel = new BroadcastChannel("bus_channel");
+
+        const map = L.map("map").setView([17.385, 78.4867], 7);
+        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
+
+        const busIcon = L.icon({
+            iconUrl: "https://cdn-icons-png.flaticon.com/512/61/61231.png",
+            iconSize: [45, 45]
+        });
+
+        const emergencyIcon = L.icon({
+            iconUrl: "https://cdn-icons-png.flaticon.com/512/564/564619.png",
+            iconSize: [40, 40]
+        });
+
+        let busMarker = L.marker([17.385, 78.4867], { icon: busIcon }).addTo(map);
+
+        function addLog(text, type = "") {
+            const box = document.createElement("div");
+            box.className = "box " + type;
+            box.innerText = text;
+            document.getElementById("logs").prepend(box);
+        }
+
+        channel.onmessage = e => {
+            const data = e.data;
+
+            if (data.type === "gps") {
+                busMarker.setLatLng([data.lat, data.lng]);
+                map.panTo([data.lat, data.lng]);
+
+                document.getElementById("lat").innerText = data.lat.toFixed(5);
+                document.getElementById("lng").innerText = data.lng.toFixed(5);
+            }
+            if (data.type === "eta_update") {
+                const box = document.getElementById("etaBox");
+                box.innerHTML = "";
+
+                data.etaList.forEach(stop => {
+                    const div = document.createElement("div");
+                    div.className = "box";
+                    div.innerText = `${stop.name} → ${stop.eta} mins`;
+                    box.appendChild(div);
+                });
+            }
+
+            if (data.type === "announce") {
+                addLog("📢 " + data.stage.toUpperCase() + " → " + data.stop, "alert");
+            }
+
+            if (data.type === "emergency") {
+                L.marker([data.lat, data.lng], { icon: emergencyIcon })
+                    .addTo(map)
+                    .bindPopup("🚨 Emergency Alert")
+                    .openPopup();
+
+                addLog("🚨 EMERGENCY reported!", "emergency");
+            }
+        };
+    </script>
+
+
+</body>
+
+</html>
